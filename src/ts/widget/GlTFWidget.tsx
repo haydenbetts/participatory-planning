@@ -65,10 +65,10 @@ export default class GlTFWidget extends declared(DrawWidget) {
 
     return (
       <div>
-        <div class={ classList[GlTFWidgetState.Import].join(" ") }
-          afterCreate={ this.attachImportWidget.bind(this) }>
-            <div id="glTFLogo" class="gltf-logo"></div>
-          </div>
+        <div class={classList[GlTFWidgetState.Import].join(" ")}
+          afterCreate={this.attachImportWidget.bind(this)}>
+          <div id="glTFLogo" class="gltf-logo"></div>
+        </div>
       </div>
     );
   }
@@ -85,9 +85,10 @@ export default class GlTFWidget extends declared(DrawWidget) {
     }
   }
 
-  private importGlTF(url: string) {
+  public importGlTF(url: string) {
     this.toggleLoadingIndicator(true);
     this.state = GlTFWidgetState.Loading;
+    console.log('url', url)
     this.currentImport = new GlTFImport(url);
     this.currentImport.blobUrl.then((blobUrl) => {
 
@@ -127,10 +128,10 @@ export default class GlTFWidget extends declared(DrawWidget) {
 
   private attachImportWidget(element: HTMLDivElement): any {
     return new (window as any).SketchfabImporter(
-        element, {
-        onModelSelected: (result: any) => {
-          this.importGlTF(result.download.gltf.url);
-        },
+      element, {
+      onModelSelected: (result: any) => {
+        this.importGlTF(result.download.gltf.url);
+      },
     });
   }
 

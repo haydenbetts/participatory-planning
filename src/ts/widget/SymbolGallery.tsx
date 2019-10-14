@@ -84,10 +84,10 @@ export default class SymbolGallery extends declared(DrawWidget) {
     const galleryGridClass = galleryItems.length ? ["gallery-grid"] : ["hide"];
     return (
       <div>
-        <div class={ galleryGridClass.join(" ") }>
-        {
-          galleryItems.map((item) => this.renderSymbolItem(item))
-        }
+        <div class={galleryGridClass.join(" ")}>
+          {
+            galleryItems.map((item) => this.renderSymbolItem(item))
+          }
         </div>
       </div>
     );
@@ -96,7 +96,7 @@ export default class SymbolGallery extends declared(DrawWidget) {
   private renderSymbolItem(item: SymbolItem) {
     const href = item.thumbnailHref;
     return (
-      <div class="gallery-grid-item" key={href} bind={this} onclick={ this.selectSymbolItem } data-item={item}>
+      <div class="gallery-grid-item" key={href} bind={this} onclick={this.selectSymbolItem} data-item={item}>
         <img src={href} />
       </div>
     );
@@ -142,6 +142,7 @@ export default class SymbolGallery extends declared(DrawWidget) {
         return groups.results[0].queryItems(queryParams) as IPromise<PortalQueryResult>;
       })
       .then((queryResult) => {
+        console.log('queryResult.results', queryResult.results)
         return queryResult.results;
       });
   }

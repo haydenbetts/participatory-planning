@@ -54,7 +54,8 @@ export default class GlTFImport extends declared(Accessor) {
       .downloadAndExtractZip(this.url)
       .then((entries) => this.zipEntriesToBlob(entries))
       .then((blobEntries) => this.combineToSingleBlob(blobEntries))
-      .then((gltfBlob) => gltfBlob.url);
+      .then((gltfBlob) => gltfBlob.url)
+      .catch((error) => console.error('my error', error))
   }
 
   private downloadAndExtractZip(url: string): IPromise<ZIPEntry[]> {
@@ -62,12 +63,14 @@ export default class GlTFImport extends declared(Accessor) {
       const reader = new this.zip.HttpProgressReader(url, {
         onProgress: this.reportDownloadProgress.bind(this),
       });
+
+      console.log('url', url)
       this.zip.createReader(
-          reader,
-          (zipReader: any) => {
-            zipReader.getEntries(resolve);
-          },
-          reject,
+        reader,
+        (zipReader: any) => {
+          zipReader.getEntries(resolve);
+        },
+        reject,
       );
     }) as any);
   }
@@ -97,15 +100,15 @@ export default class GlTFImport extends declared(Accessor) {
   private saveEntryToBlob(entry: ZIPEntry): IPromise<BlobZIPEntry> {
     return createPromise(((resolve: (_: BlobZIPEntry) => void) => {
       entry.getData(
-          new this.zip.BlobWriter("text/plain"),
-          (data: any) => {
-              const url = window.URL.createObjectURL(data);
-              resolve({
-                name: entry.filename,
-                url,
-                blob: data,
-              });
-          },
+        new this.zip.BlobWriter("text/plain"),
+        (data: any) => {
+          const url = window.URL.createObjectURL(data);
+          resolve({
+            name: entry.filename,
+            url,
+            blob: data,
+          });
+        },
       );
     }) as any);
   }
@@ -121,9 +124,9 @@ export default class GlTFImport extends declared(Accessor) {
       return rejectPromise("Can not find a .gltf file in ZIP archive");
     }
     const assets = entries.reduce((previous, entry) => {
-        previous[entry.name] = entry.url;
-        return previous;
-      },
+      previous[entry.name] = entry.url;
+      return previous;
+    },
       {},
     );
     const reader = new FileReader();

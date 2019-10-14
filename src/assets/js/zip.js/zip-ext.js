@@ -26,7 +26,7 @@
  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-(function() {
+(function () {
 	"use strict";
 
 	var ERR_HTTP_RANGE = "HTTP Range not supported.";
@@ -38,7 +38,7 @@
 
 	var appendABViewSupported;
 	try {
-		appendABViewSupported = new Blob([ new DataView(new ArrayBuffer(0)) ]).size === 0;
+		appendABViewSupported = new Blob([new DataView(new ArrayBuffer(0))]).size === 0;
 	} catch (e) {
 	}
 
@@ -55,9 +55,9 @@
 			var request;
 			if (!that.data) {
 				request = new XMLHttpRequest();
-				request.addEventListener("load", function() {
+				request.addEventListener("load", function () {
 					if (!that.size)
-						that.size = Number(request.getResponseHeader("Content-Length")) || Number(request.response.byteLength);
+						that.size = Number(request.getResponseHeader("x-goog-stored-content-length")) || Number(request.getResponseHeader('x-goog-stored-content-length')) || Number(request.response.byteLength);
 					that.data = new Uint8Array(request.response);
 					callback();
 				}, false);
@@ -77,9 +77,9 @@
 				return;
 			}
 			var request = new XMLHttpRequest();
-			request.addEventListener("load", function() {
+			request.addEventListener("load", function () {
 				if (request.status >= 200 && request.status < 300) {
-					that.size = Number(request.getResponseHeader("Content-Length"));
+					that.size = Number(request.getResponseHeader("x-goog-stored-content-length")) || Number(request.getResponseHeader('x-goog-stored-content-length'));
 				} else {
 					that.size = 0;
 				}
@@ -97,7 +97,7 @@
 		}
 
 		function readUint8Array(index, length, callback, onerror) {
-			getData(function() {
+			getData(function () {
 				callback(new Uint8Array(that.data.subarray(index, index + length)));
 			}, onerror);
 		}
@@ -114,8 +114,8 @@
 
 		function init(callback, onerror) {
 			var request = new XMLHttpRequest();
-			request.addEventListener("load", function() {
-				that.size = Number(request.getResponseHeader("Content-Length"));
+			request.addEventListener("load", function () {
+				that.size = Number(request.getResponseHeader("x-goog-stored-content-length"));
 				if (request.getResponseHeader("Accept-Ranges") == "bytes")
 					callback();
 				else
@@ -131,7 +131,7 @@
 			request.open("GET", url);
 			request.responseType = "arraybuffer";
 			request.setRequestHeader("Range", "bytes=" + index + "-" + (index + length - 1));
-			request.addEventListener("load", function() {
+			request.addEventListener("load", function () {
 				callback(request.response);
 			}, false);
 			request.addEventListener("error", onerror, false);
@@ -139,7 +139,7 @@
 		}
 
 		function readUint8Array(index, length, callback, onerror) {
-			readArrayBuffer(index, length, function(arraybuffer) {
+			readArrayBuffer(index, length, function (arraybuffer) {
 				callback(new Uint8Array(arraybuffer));
 			}, onerror);
 		}
@@ -201,17 +201,17 @@
 		var writer, that = this;
 
 		function init(callback, onerror) {
-			fileEntry.createWriter(function(fileWriter) {
+			fileEntry.createWriter(function (fileWriter) {
 				writer = fileWriter;
 				callback();
 			}, onerror);
 		}
 
 		function writeUint8Array(array, callback, onerror) {
-			var blob = new Blob([ appendABViewSupported ? array : array.buffer ], {
-				type : contentType
+			var blob = new Blob([appendABViewSupported ? array : array.buffer], {
+				type: contentType
 			});
-			writer.onwrite = function() {
+			writer.onwrite = function () {
 				writer.onwrite = null;
 				callback();
 			};
@@ -238,7 +238,7 @@
 
 	if (zip.fs) {
 		ZipDirectoryEntry = zip.fs.ZipDirectoryEntry;
-		ZipDirectoryEntry.prototype.addHttpContent = function(name, URL, useRangeHeader) {
+		ZipDirectoryEntry.prototype.addHttpContent = function (name, URL, useRangeHeader) {
 			function addChild(parent, name, params, directory) {
 				if (parent.directory)
 					return directory ? new ZipDirectoryEntry(parent.fs, name, params, parent) : new zip.fs.ZipFileEntry(parent.fs, name, params, parent);
@@ -247,14 +247,14 @@
 			}
 
 			return addChild(this, name, {
-				data : URL,
-				Reader : useRangeHeader ? HttpRangeReader : HttpReader
+				data: URL,
+				Reader: useRangeHeader ? HttpRangeReader : HttpReader
 			});
 		};
-		ZipDirectoryEntry.prototype.importHttpContent = function(URL, useRangeHeader, onend, onerror) {
+		ZipDirectoryEntry.prototype.importHttpContent = function (URL, useRangeHeader, onend, onerror) {
 			this.importZip(useRangeHeader ? new HttpRangeReader(URL) : new HttpReader(URL), onend, onerror);
 		};
-		zip.fs.FS.prototype.importHttpContent = function(URL, useRangeHeader, onend, onerror) {
+		zip.fs.FS.prototype.importHttpContent = function (URL, useRangeHeader, onend, onerror) {
 			this.entries = [];
 			this.root = new ZipDirectoryEntry(this);
 			this.root.importHttpContent(URL, useRangeHeader, onend, onerror);

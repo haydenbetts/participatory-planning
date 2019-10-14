@@ -26,6 +26,7 @@ import CreateBuilding from "./widget/CreateBuilding";
 import CreatePath from "./widget/CreatePath";
 import DrawWidget from "./widget/DrawWidget";
 import GlTFWidget from "./widget/GlTFWidget";
+import CampingWidget from './widget/CampingWidget';
 import SymbolGallery, { SymbolGroupId } from "./widget/SymbolGallery";
 import WidgetBase from "./widget/WidgetBase";
 
@@ -58,7 +59,7 @@ export default class App extends declared(WidgetBase) {
   public thumbnailUrl: string;
 
   @property()
-  public scene = new PlanningScene({app: this});
+  public scene = new PlanningScene({ app: this });
 
   public set currentOperation(operation: Operation | null) {
     if (this.operation) {
@@ -71,22 +72,24 @@ export default class App extends declared(WidgetBase) {
     return this.operation;
   }
 
-  private timeline = new Timeline({app: this});
+  private timeline = new Timeline({ app: this });
 
-  private createArea = new CreateArea({app: this});
+  private createArea = new CreateArea({ app: this });
 
-  private createPath = new CreatePath({app: this});
+  private createPath = new CreatePath({ app: this });
 
-  private createBuilding = new CreateBuilding({app: this});
+  private createBuilding = new CreateBuilding({ app: this });
 
-  private symbolGallery = new SymbolGallery({app: this});
+  private symbolGallery = new SymbolGallery({ app: this });
 
-  private glTFWidget = new GlTFWidget({app: this});
+  private glTFWidget = new GlTFWidget({ app: this });
+
+  private campingWidget = new CampingWidget({ app: this });
 
   @property()
   private selectedWidget: DrawWidget | null = null;
 
-  private drawWidgets = [this.createArea, this.createPath, this.createBuilding, this.symbolGallery, this.glTFWidget];
+  private drawWidgets = [this.createArea, this.createPath, this.createBuilding, this.symbolGallery, this.glTFWidget, this.campingWidget];
 
   private mainMenuEntries: MainMenu[] = [];
 
@@ -103,16 +106,16 @@ export default class App extends declared(WidgetBase) {
     view.on("click", (event) => {
       if (!this.currentOperation) {
         view.hitTest(event)
-        .then((response) => {
-          // check user clicked on a graphic, in which case we try to pass it to a SketchViewModel
-          response.results.some((result) => {
-            const graphic = result.graphic;
-            if (graphic && graphic.geometry) {
-              return this.updateGraphic(graphic);
-            }
-            return false;
+          .then((response) => {
+            // check user clicked on a graphic, in which case we try to pass it to a SketchViewModel
+            response.results.some((result) => {
+              const graphic = result.graphic;
+              if (graphic && graphic.geometry) {
+                return this.updateGraphic(graphic);
+              }
+              return false;
+            });
           });
-        });
       }
     });
 
@@ -147,13 +150,18 @@ export default class App extends declared(WidgetBase) {
       onClick: this.showSymbolGallery.bind(this, SymbolGroupId.Vehicles),
     });
     this.mainMenuEntries.push({
-      label: "glTF",
+      label: "Custom 3D Model",
       iconName: "fas fa-cloud-download-alt",
       onClick: (element) => {
         this.glTFWidget.startImport();
         this.showWidget(this.glTFWidget, element);
-      },
-    });
+      }
+    }),
+      this.mainMenuEntries.push({
+        label: "Camping",
+        iconName: "fas fa-map-marker-alt",
+        onClick: (element) => this.showWidget(this.campingWidget, element)
+      });
 
     this.scene.map.when(() => {
       this.thumbnailUrl = this.scene.map.portalItem.getThumbnailUrl(400);
@@ -167,43 +175,44 @@ export default class App extends declared(WidgetBase) {
     const planningAreaName = this.settings.planningAreaName;
 
     const thumbnail = this.thumbnailUrl ?
-      <img class="card-wide-image" src={ this.thumbnailUrl } alt={ planningAreaName } /> :
+      <img class="card-wide-image" src={this.thumbnailUrl} alt={planningAreaName} /> :
       null;
 
     return (
       <div>
-        <div id="scene" afterCreate={ this.attachScene.bind(this) } />
+        <div id="scene" afterCreate={this.attachScene.bind(this)} />
 
         <div class="box">
           <div class="top">
-            <div afterCreate={ this.attachTimeline.bind(this) } />
+            <div afterCreate={this.attachTimeline.bind(this)} />
           </div>
           <div class="content">
-            <div class="hide" afterCreate={ this.attachWidget.bind(this, this.createArea) } />
-            <div class="hide" afterCreate={ this.attachWidget.bind(this, this.createPath) } />
-            <div class="hide" afterCreate={ this.attachWidget.bind(this, this.createBuilding) } />
-            <div class="hide" afterCreate={ this.attachWidget.bind(this, this.symbolGallery) } />
-            <div class="hide" afterCreate={ this.attachWidget.bind(this, this.glTFWidget)} />
+            <div class="hide" afterCreate={this.attachWidget.bind(this, this.createArea)} />
+            <div class="hide" afterCreate={this.attachWidget.bind(this, this.createPath)} />
+            <div class="hide" afterCreate={this.attachWidget.bind(this, this.createBuilding)} />
+            <div class="hide" afterCreate={this.attachWidget.bind(this, this.symbolGallery)} />
+            <div class="hide" afterCreate={this.attachWidget.bind(this, this.glTFWidget)} />
+            <div class="hide" afterCreate={this.attachWidget.bind(this, this.campingWidget)} />
           </div>
           <div class="bottom">
             <div class="menu">
               <div class="menu-item">
-                <button class="btn btn-large" onclick={ () => { this.reset(); this.timeline.showIntro(); } }>
+                <button class="btn btn-large" onclick={() => { this.reset(); this.timeline.showIntro(); }}>
                   NEW PLAN
                 </button>
               </div>
               {
                 this.mainMenuEntries.map((entry) => (
                   <div class="menu-item">
-                    <button class="btn" afterCreate={ this.attachWidgetButton.bind(this, entry) }>
-                      <span class={ "font-size-3 " + entry.iconName } /><br />
-                      { entry.label }
+                    <button class="btn" afterCreate={this.attachWidgetButton.bind(this, entry)}>
+                      <span class={"font-size-3 " + entry.iconName} /><br />
+                      {entry.label}
                     </button>
                   </div>
                 ))
               }
               <div class="menu-item">
-                <button class="btn btn-large" onclick={ () => { this.reset(); this.timeline.takeScreenshot(); } }>
+                <button class="btn btn-large" onclick={() => { this.reset(); this.timeline.takeScreenshot(); }}>
                   SUBMIT PLAN
                 </button>
               </div>
@@ -213,7 +222,7 @@ export default class App extends declared(WidgetBase) {
 
         <div id="overlay" class="center" />
         <div id="loadingIndicator" class="center hide"
-          afterCreate={ () => this.toggleLoadingIndicator(true) }>
+          afterCreate={() => this.toggleLoadingIndicator(true)}>
           <div class="loader-bars"></div>
           <div class="loader-text text-white" id="loadingIndicatorText"></div>
         </div>
@@ -222,9 +231,9 @@ export default class App extends declared(WidgetBase) {
           <div class="column-17">
             <div class="card card-wide">
               <figure class="card-wide-image-wrap phone-hide">
-                { thumbnail }
+                {thumbnail}
                 <div class="card-image-caption">
-                { planningAreaName }
+                  {planningAreaName}
                 </div>
               </figure>
               <div class="card-content">
@@ -238,9 +247,9 @@ export default class App extends declared(WidgetBase) {
                 </p>
                 <div menu>
                   <button class="menu-item btn"
-                    onclick={ () => this.timeline.playIntroAnimation() }>Start Planning</button>
+                    onclick={() => this.timeline.playIntroAnimation()}>Start Planning</button>
                   <button class="menu-item btn btn-transparent"
-                    onclick={ () => this.timeline.startPlanning() }>Skip Animation</button>
+                    onclick={() => this.timeline.startPlanning()}>Skip Animation</button>
                 </div>
               </div>
             </div>
@@ -250,7 +259,7 @@ export default class App extends declared(WidgetBase) {
         <div id="screenshot" class="center hide">
           <div>
             <div class="center">
-              <button class="btn btn-large btn-white" onclick={ () => this.timeline.startPlanning() }>
+              <button class="btn btn-large btn-white" onclick={() => this.timeline.startPlanning()}>
                 <span class="font-size-3 fas fa-arrow-left" /><br />
                 Back
               </button>
@@ -263,7 +272,7 @@ export default class App extends declared(WidgetBase) {
           </div>
           <div>
             <div class="center">
-              <button class="btn btn-large btn-white" onclick={ () => this.timeline.downloadScreenshot()}>
+              <button class="btn btn-large btn-white" onclick={() => this.timeline.downloadScreenshot()}>
                 <span class="font-size-3 fas fa-share-square" /><br />
                 Share
               </button>
@@ -283,6 +292,7 @@ export default class App extends declared(WidgetBase) {
   }
 
   private attachWidget(menu: DrawWidget, element: HTMLDivElement) {
+    console.log('element', element)
     menu.container = element;
   }
 
@@ -317,6 +327,7 @@ export default class App extends declared(WidgetBase) {
         return;
       }
     }
+
     this.selectedWidget = widget;
     element.classList.add("active");
     (this.selectedWidget.container as HTMLElement).classList.remove("hide");
